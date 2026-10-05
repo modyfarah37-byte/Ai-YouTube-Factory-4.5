@@ -42,9 +42,10 @@ jobs:
             -keypass android \
             -dname "CN=AI YouTube Factory,O=Cairo,C=EG"
 
-          "$BUILD_TOOLS/zipalign"  -f 4 \
-            project/android_app/app/build/outputs/apk/release/app-release-unsigned.apk
+          "$BUILD_TOOLS/zipalign" -f 4 \
+           project/android_app/app/build/outputs/apk/release/app-release-unsigned.apk \
             aligned.apk
+           
 
           "$BUILD_TOOLS/apksigner" sign \
             --ks release.keystore \
