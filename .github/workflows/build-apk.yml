@@ -33,9 +33,18 @@ jobs:
           cd project/android_app
           gradle assembleRelease
 
+      - name: Find APK
+        run: |
+          echo "Searching for APK..."
+          find project/android_app -type f -name "*.apk" -print
+
       - name: Sign APK
         run: |
           BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+
+          APK=$(find project/android_app -type f -name "*.apk" | head -1)
+
+          echo "Found APK: $APK"
 
           keytool -genkeypair \
             -keystore release.keystore \
@@ -47,14 +56,12 @@ jobs:
             -keypass android \
             -dname "CN=AI YouTube Factory,O=Cairo,C=EG"
 
-          cp project/android_app/app/build/outputs/apk/release/app-release.apk unsigned.apk
-
           "$BUILD_TOOLS/apksigner" sign \
             --ks release.keystore \
             --ks-pass pass:android \
             --key-pass pass:android \
             --out app-release.apk \
-            unsigned.apk
+            "$APK"
 
           "$BUILD_TOOLS/apksigner" verify --verbose app-release.apk
 
