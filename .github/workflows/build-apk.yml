@@ -2,7 +2,8 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -23,6 +24,10 @@ jobs:
         run: |
           unzip -o ai_youtube_factory_phone_build_fixed.zip -d project
 
+          sed -i "s/applicationId 'com.aifactory.youtube'/applicationId 'com.modyfarah.aifactory'/" project/android_app/app/build.gradle
+
+          sed -i "s/versionCode 1/versionCode 2/" project/android_app/app/build.gradle
+
       - name: Build release APK
         run: |
           cd project/android_app
@@ -42,17 +47,14 @@ jobs:
             -keypass android \
             -dname "CN=AI YouTube Factory,O=Cairo,C=EG"
 
-          "$BUILD_TOOLS/zipalign" -f 4 \
-           project/android_app/app/build/outputs/apk/release/app-release-unsigned.apk \
-            aligned.apk
-           
+          cp project/android_app/app/build/outputs/apk/release/app-release.apk unsigned.apk
 
           "$BUILD_TOOLS/apksigner" sign \
             --ks release.keystore \
             --ks-pass pass:android \
             --key-pass pass:android \
             --out app-release.apk \
-            aligned.apk
+            unsigned.apk
 
           "$BUILD_TOOLS/apksigner" verify --verbose app-release.apk
 
