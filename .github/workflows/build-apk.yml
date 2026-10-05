@@ -1,0 +1,62 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Extract project
+        run: |
+          unzip -o ai_youtube_factory_phone_build_fixed.zip -d project
+
+      - name: Build release APK
+        run: |
+          cd project/android_app
+          gradle assembleRelease
+
+      - name: Sign APK
+        run: |
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+
+          keytool -genkeypair \
+            -keystore release.keystore \
+            -alias ai-youtube \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=AI YouTube Factory,O=Cairo,C=EG"
+
+          "$BUILD_TOOLS/zipalign" -p -f 4 \
+            project/android_app/app/build/outputs/apk/release/app-release.apk \
+            aligned.apk
+
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks release.keystore \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --out app-release.apk \
+            aligned.apk
+
+          "$BUILD_TOOLS/apksigner" verify --verbose app-release.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-YouTube-Factory-Release
+          path: app-release.apk
